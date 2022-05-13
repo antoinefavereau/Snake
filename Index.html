@@ -1,13 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake</title>
+    <style>
+        #canvasJeu {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+            border: 5px solid black;
+        }
+
+        #btn {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 50px;
+        }
+    </style>
 </head>
+
 <body>
-    <canvas id="canvasJeu" style="width: 100%; height: 100%"></canvas>
-    <script src="script.js"></script>
+    <canvas id="canvasJeu"></canvas>
+    <button id="btn" onclick="newGame()">Nouvelle partie</button>
+    <script>
+        // Récupération du canevas
+        const canvas = document.getElementById('canvasJeu');
+
+        // Affectation des bonnes dimensions car le css n'est pas pris en compte
+        canvas.width = canvas.scrollWidth;
+        canvas.height = canvas.scrollHeight;
+
+        // Création d'un contexte de dessin 2d sur le canevas
+        const canvasContext = canvas.getContext('2d');
+
+        const snakeWidth = 20;
+        const snakeSpeed = 2;
+        const snakeColor = 'black';
+
+        const appleWidth = 10;
+        const appleColor = 'red';
+
+        var apple;
+        var snake;
+        var jeu;
+
+        class Apple {
+            constructor() {
+                this.newPosition();
+            }
+
+            newPosition() {
+                this.x = Math.random() * canvas.width - appleWidth;
+                this.y = Math.random() * canvas.height - appleWidth;
+            }
+
+            draw() {
+                canvasContext.fillStyle = appleColor;
+                canvasContext.fillRect(this.x, this.y, appleWidth, appleWidth);
+            }
+        }
+
+        class Snake {
+            constructor(x, y, direction, length) {
+                this.x = x;
+                this.y = y;
+                if (length) {
+                    this.direction = direction;
+                    this.body = [new Snake(this.x, this.y)];
+                    this.bodyLength = length;
+                }
+            }
+
+            update() {
+
+                if (this.bodyLength > this.body.length - 1) {
+                    this.body.push(new Snake(this.body[this.body.length - 1].x, this.body[this.body.length - 1].y));
+                }
+
+                for (let i = this.body.length - 1; i > 0; i--) {
+                    this.body[i].x = this.body[i - 1].x;
+                    this.body[i].y = this.body[i - 1].y;
+                    this.body[i].draw();
+                    if (i > 20 && this.body[i].x + snakeWidth > this.x && this.body[i].x < this.x + snakeWidth && this.body[i].y + snakeWidth > this.y && this.body[i].y < this.y + snakeWidth) {
+                        clearInterval(jeu);
+                        // Scrore = this.bodyLength
+                        document.getElementById('btn').style.display = 'block';
+                    }
+                }
+                this.body[0].x = this.x;
+                this.body[0].y = this.y;
+
+                if (this.x + snakeWidth >= apple.x && this.x <= apple.x + appleWidth && this.y + snakeWidth >= apple.y && this.y <= apple.y + appleWidth) {
+                    this.bodyLength += 10;
+                    apple.newPosition();
+                }
+
+                switch (this.direction) {
+                    case 0:
+                        this.y -= snakeSpeed;
+                        break;
+                    case 90:
+                        this.x += snakeSpeed;
+                        break;
+                    case 180:
+                        this.y += snakeSpeed;
+                        break;
+                    case 270:
+                        this.x -= snakeSpeed;
+                        break;
+                    default:
+                        break;
+                }
+
+                if (this.x + snakeWidth > canvas.width) {
+                    this.x = 0;
+                } else if (this.x < 0) {
+                    this.x = canvas.width - snakeWidth;
+                } else if (this.y + snakeWidth > canvas.height) {
+                    this.y = 0;
+                } else if (this.y < 0) {
+                    this.y = canvas.height - snakeWidth;
+                }
+
+            }
+
+            draw() {
+                canvasContext.fillStyle = snakeColor;
+                canvasContext.fillRect(this.x, this.y, snakeWidth, snakeWidth);
+            }
+        }
+
+        function newGame() {
+
+            document.getElementById('btn').style.display = 'none';
+
+            apple = new Apple();
+            snake = new Snake(100, 100, 90, 10);
+
+            // Détection des flèches directionnelles
+            document.addEventListener('keydown', function (event) {
+                switch (event.key) {
+                    case "ArrowLeft":
+                        if (snake.direction != 90)
+                            snake.direction = 270;
+                        break;
+                    case "ArrowRight":
+                        if (snake.direction != 270)
+                            snake.direction = 90;
+                        break;
+                    case "ArrowUp":
+                        if (snake.direction != 180)
+                            snake.direction = 0;
+                        break;
+                    case "ArrowDown":
+                        if (snake.direction != 0)
+                            snake.direction = 180;
+                        break;
+                }
+            });
+
+            // Boucle principale
+            jeu = setInterval(function () {
+                canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+                snake.update();
+                apple.draw();
+                snake.draw();
+            }, 10);
+        }
+    </script>
 </body>
+
 </html>
